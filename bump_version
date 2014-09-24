@@ -1,0 +1,76 @@
+#!/bin/sh
+ORIG_LIB_DIR=".build/rabbitmq"
+ORIG_RMQ_DIR=".build/rabbitmq-server"
+ORIG_CODEGEN_DIR=".build/rabbitmq-codegen"
+echo "* Checking if rabbitmq source exists..."
+# Check if the lib dir exists
+if [ ! -d "${ORIG_LIB_DIR}" ]; then
+    echo "* It doesn't. Cloning..."
+    git clone https://github.com/rabbitmq/rabbitmq-erlang-client.git ${ORIG_LIB_DIR}
+fi
+# Update the source lib
+(cd ${ORIG_LIB_DIR} && git fetch origin)
+LATEST_TAG=$(cd ${ORIG_LIB_DIR} && git describe --abbrev=0 --tags)
+echo "Checking out tag ${LATEST_TAG}"
+(cd $ORIG_LIB_DIR && git checkout ${LATEST_TAG})
+
+echo "* Checking if rabbitmq server source exists..."
+if [ ! -d "${ORIG_RMQ_DIR}" ]; then
+    echo "* It doesn't. Cloning..."
+    git clone https://github.com/rabbitmq/rabbitmq-server.git ${ORIG_RMQ_DIR}
+fi
+(cd $ORIG_RMQ_DIR && git checkout ${LATEST_TAG})
+
+echo "* Checking codegen sources."
+if [ ! -d "${ORIG_CODEGEN_DIR}" ]; then
+    git clone https://github.com/rabbitmq/rabbitmq-codegen.git ${ORIG_CODEGEN_DIR}
+fi
+(cd $ORIG_CODEGEN_DIR && git checkout ${LATEST_TAG})
+
+
+echo "* Building framing files. (This can take a few minutes...)"
+(cd $ORIG_RMQ_DIR && make &> /dev/null )
+if [ "$?" -ne 0 ]; then
+    echo "Build failed..."
+    exit 1
+fi
+echo "OK!"
+
+echo "* Cleaning old files."
+rm src/*.erl
+rm include/*
+
+echo "* Parsing dependencies."
+FILES=( $(tools/read_common_deps.escript ${ORIG_LIB_DIR}/rabbit_common.app.in) )
+if [ ${#FILES[@]} -eq 0 ]; then
+    echo "No dependencies found."
+    exit 1
+fi
+
+echo "Got ${#FILES[@]} files."
+for FILE in "${FILES[@]}"; do
+    echo "Copying ${FILE}"
+    cp "${ORIG_RMQ_DIR}/src/${FILE}" "src/${FILE}"
+    if [ "$?" -ne 0 ]; then
+	echo "Copy failed."
+	exit 1
+    fi
+done
+
+echo "Copying include files."
+cp -r ${ORIG_RMQ_DIR}/include .
+
+echo "* Cleaning up..."
+(cd $ORIG_RMQ_DIR && make clean &> /dev/null )
+
+echo "* Please review the following changes:"
+git add .
+git status
+echo "OK? (y/n)"
+read -n 1 OK
+if [ "${OK}" -ne "y" ]; then
+    exit 1
+fi
+
+git commit -m "NEW Bumped RabbitMQ version to ${LATEST_TAG}"
+git push origin master
