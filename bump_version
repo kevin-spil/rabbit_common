@@ -68,9 +68,10 @@ git add .
 git status
 echo "OK? (y/n)"
 read -n 1 OK
-if [ "${OK}" -ne "y" ]; then
+if [ "${OK}" != "y" ]; then
     exit 1
 fi
 
 git commit -m "NEW Bumped RabbitMQ version to ${LATEST_TAG}"
+git tag ${LATEST_TAG}
 git push origin master
