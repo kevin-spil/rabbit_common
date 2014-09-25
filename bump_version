@@ -152,10 +152,10 @@ function review {
     git status
     echo "OK? (y/n)"
     read -n 1 OK
+    printf "\n"
     if [ "${OK}" != "y" ]; then
 	exit 1
     fi
-    printf "/n"
 }
 
 # Creates a commit
@@ -186,6 +186,7 @@ function create_tag {
     if [ ${current_tag}=${latest_tag} ]; then
 	echo "A commit with the current RMQ version already exists. Create new tag anyway?"
 	read -n 1 new_tag
+	printf "\n"
 	if [ "${new_tag}" != "y" ]; then
             push
 	else
