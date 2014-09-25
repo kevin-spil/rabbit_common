@@ -156,14 +156,19 @@ function review {
     printf "/n"
 }
 
-# Creates a commit and tags that commit.
-# Params: latest rmq client tag
+# Creates a commit
+# Params: None
 function commit {
-    local latest_tag=$1
+
     git commit -m "NEW Bumped RabbitMQ version to ${latest_tag}"
-    git tag ${latest_tag}
 }
 
+# Creates a tag
+# Params: Current rabbitmq client version
+function tag {
+    local latest_tag=$1
+    git tag ${latest_tag}
+}
 # Pushes the changes to master.
 # Params: None
 function push {
@@ -182,11 +187,13 @@ function create_tag {
 	if [ "${new_tag}" != "y" ]; then
             push
 	else
-	    commit ${latest_tag}
+	    commit
+	    git tag -f ${latest_tag}
 	    push
 	fi
     else
-	commit ${latest_tag}
+	commit
+	tag ${latest_tag}
 	push
     fi
 }
