@@ -136,6 +136,12 @@ function cleanup {
     (make clean -C ${ORIG_RMQ_DIR} &> /dev/null )
 }
 
+function update_app_src {
+    local latest_tag=$1
+    echo "* Updating app.src file."
+    sed "s/%%VERSION%%/${latest_tag}/g" src/rabbit_common.app.src.in > src/rabbit_common.app.src
+}
+
 # Shows the modified files before committing.
 # Params: None
 function review {
@@ -210,6 +216,8 @@ function main {
     copy_include_files
 
     cleanup
+
+    update_app_src ${latest_tag}
 
     review
     create_tag ${latest_tag}

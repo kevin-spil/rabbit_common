@@ -1,0 +1,7 @@
+{application, rabbit_common,
+ [{description, "RabbitMQ Common Libraries"},
+  {vsn, "%%VERSION%%"},
+  {modules, []},
+  {registered, []},
+  {env, []},
+  {applications, [kernel, stdlib]}]}.
