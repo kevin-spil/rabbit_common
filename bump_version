@@ -136,6 +136,8 @@ function cleanup {
     (make clean -C ${ORIG_RMQ_DIR} &> /dev/null )
 }
 
+# Updates the app.src file.
+# Params: The tag to use
 function update_app_src {
     local latest_tag=$1
     echo "* Updating app.src file."
@@ -189,7 +191,8 @@ function create_tag {
 	else
 	    commit
 	    git tag -f ${latest_tag}
-	    push
+	    git push origin master
+	    git push origin --tags -f
 	fi
     else
 	commit
